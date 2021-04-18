@@ -2003,7 +2003,7 @@ function applyVirtualResolutionMutations({
         // generate a hash from it. By checking if this hash is already
         // registered, we know whether we can trim the new version.
         const dependencyHash = hashUtils.makeHash(
-          ...[...virtualPackage.dependencies.values()].map(descriptor => {
+          [...virtualPackage.dependencies.values()].reduce((previousValue, descriptor) => {
             const resolution = descriptor.range !== `missing:`
               ? allResolutions.get(descriptor.descriptorHash)
               : `missing:`;
@@ -2011,15 +2011,15 @@ function applyVirtualResolutionMutations({
             if (typeof resolution === `undefined`)
               throw new Error(`Assertion failed: Expected the resolution for ${structUtils.prettyDescriptor(project.configuration, descriptor)} to have been registered`);
 
-            return resolution === top ? `${resolution} (top)` : resolution;
-          }),
+            return `${previousValue}${resolution === top ? `${resolution} (top)` : resolution}`;
+          }, ``)
           // We use the identHash to disambiguate between virtual descriptors
           // with different base idents being resolved to the same virtual package.
           // Note: We don't use the descriptorHash because the whole point of duplicate
           // virtual descriptors is that they have different `virtual:` ranges.
           // This causes the virtual descriptors with different base idents
           // to be preserved, while the virtual package they resolve to gets deduped.
-          virtualDescriptor.identHash,
+          + virtualDescriptor.identHash,
         );
 
         const masterDescriptor = otherVirtualInstances.get(dependencyHash);
